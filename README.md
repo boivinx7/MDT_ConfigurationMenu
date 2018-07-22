@@ -13,7 +13,9 @@ Which is the "DeployWiz_Definition_ENU.xml"
 
 Since this Menu is meant for personnal use, I added simple Menu Pane to Create a Local User, So Non Domain Computer.
 It looks like this
+
 ![MDT-ConfigurationMenu.ps1](https://i.imgur.com/zP58hbt.png "MDT-ConfigurationMenu")
+
 For now there is no way to Skip this Menu, and there is no validation in it.
 I might do an update to fix this
 
@@ -40,6 +42,7 @@ No OS is included in this Program, you will need to Download it yourself.
 # Menu Options 2
 This will add Applications option
 Will Look Something Like this
+
 ![MDT-ConfigurationMenu.ps1](http://c-nergy.be/blog/wp-content/gallery/mdt_bundle/mdt_bundle13.png "MDT-ConfigurationMenu")
 
 but these apps are not Local application
@@ -76,6 +79,7 @@ you can remove anything that you would like.
 If you want to add stuff.
 
 Run this Command in Powershell : Get-AppxPackage -AllUsers | select packagefamilyname
+
 ![MDT-ConfigurationMenu.ps1](https://i.imgur.com/lnSGmMP.png "MDT-ConfigurationMenu")
 
 The Choco Folder Contains a Script to install Apps that you might want to force so not have in the selection Menu.
