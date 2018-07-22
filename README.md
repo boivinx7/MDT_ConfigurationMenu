@@ -1,5 +1,6 @@
 # MDT_ConfigurationMenu
-MDT Easy Config Menu
+MDT Easy Config Menu, This is V1 and there is For sure things that I will update,
+But some things might not get updated.
 
 ![MDT-ConfigurationMenu.ps1](https://i.imgur.com/Wg5kvCH.png "MDT-ConfigurationMenu")
 
