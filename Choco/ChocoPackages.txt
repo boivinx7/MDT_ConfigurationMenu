@@ -1,0 +1,9 @@
+notepadplusplus
+7zip
+AdobeAIR
+adobereader
+adobereader-update
+chocolatey
+chocolatey-core.extension
+chocolateygui
+googlechrome

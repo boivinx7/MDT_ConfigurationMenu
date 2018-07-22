@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      DeployWiz_LocalAccount.wsf
+' // 
+' // Version:   6.3.8298.1000
+' // 
+' // Purpose:   Main Client Deployment Wizard Defintion File
+' // 
+' // ***************************************************************************
+
+-->
+<Wizard>
+  <Global>
+    <CustomScript>DeployWiz_LocalAccount.vbs</CustomScript>
+  </Global>
+  <Pane id="LocalAccount" title="LocalAccount">
+    <Body><![CDATA[
+
+
+<table>
+	<tr valign=top>
+		<td width=80>
+			<img src="DeployWiz_Credentials.png">
+		</td>
+		<td>
+			<span style="width: 100px;">User Name:</span>
+			<input type=text id=username name="LocalUsername" size=37 language=vbscript><br>
+
+			<span style="width: 100px;">Password:</span>
+			<input type=password id=userpassword name="LocalUserPassword" size=37 language=vbscript><br>
+
+		</td>
+	</tr>
+</table>
+
+		]]></Body>
+  </Pane>
+</Wizard>
