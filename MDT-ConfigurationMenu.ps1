@@ -40,7 +40,7 @@ function Set-ChocoAppDependency ($ApplicationName) {
 
     if($ChocoApp -eq $null -or $ChocoApp -eq "")
     {
-        $ChocoCommandLine = Get-Content "$PSScriptRoot\Scripts\Choco\ChocoCommandLine.txt"
+        $ChocoCommandLine = Get-Content "$PSScriptRoot\Choco\ChocoCommandLine.txt"
 
         Import-MDTApplication -path "DS001:\Applications" -enable "True" -Name Chocolatey -ShortName Chocolatey -Version "" -Publisher "" -Language "" -CommandLine $ChocoCommandLine -WorkingDirectory "" -NoSource -Verbose
     }
@@ -399,7 +399,7 @@ if(Test-Path "$env:ProgramFiles\Microsoft Deployment Toolkit\Templates\ClientNew
 }
 Else
 {
-    Copy-Item "$PSScriptRoot\Template\ClientNew.xml" -Destination "$env:ProgramFiles\Microsoft Deployment Toolkit\Templates\ClienNew.xml"
+    Copy-Item "$PSScriptRoot\Template\ClientNew.xml" -Destination "$env:ProgramFiles\Microsoft Deployment Toolkit\Templates\ClientNew.xml"
 }
 
 ##############################################################################################################################################
