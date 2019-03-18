@@ -23,7 +23,7 @@ Function Select-OS {
     $TSChoice = $Script:TaskSequence.tss.ts | select name,ID
     $SelectedTS = $TSChoice | Out-GridView -Title "Select OS" -OutputMode Single
     $IDPath = $SelectedTS.ID
-    $TSPath = "$ControPath\$IDPath\ts.xml"
+    $TSPath = "$Script:ControlPath\$IDPath\ts.xml"
     $TSXML = [xml](Get-Content $TSPath)
     $TSXML.sequence.globalVarList.variable | Where {$_.name -eq "OSGUID"} | ForEach-Object {$_."#text" = $OSGUID}
     $TSXML.sequence.group | Where {$_.Name -eq "Install"} | ForEach-Object {$_.step} | Where {
@@ -52,7 +52,7 @@ function Set-ChocoAppDependency ($ApplicationName) {
 
     $ChocoAppGuid = $ChocoApp.guid
 
-    $AppPath = "$ControPath\Applications.xml"
+    $AppPath = "$Script:ControlPath\Applications.xml"
 
     $AppXML = [xml](Get-Content $AppPath)
 
@@ -226,6 +226,8 @@ function Create-MDTTaskSequence {
     else
     {
         Copy-item "$psscriptroot\Scripts\*.xml" "$Script:MDTLocalPath\Scripts" -Recurse -force
+		Copy-item "$psscriptroot\Scripts\*.vbs" "$Script:MDTLocalPath\Scripts" -Recurse -force
+		Copy-item "$psscriptroot\Scripts\*.enu" "$Script:MDTLocalPath\Scripts" -Recurse -force
     }
     pause
 }
@@ -455,21 +457,21 @@ else
     New-PSDrive -Name "DS001" -PSProvider MDTProvider -Root $Script:MDTDeploymentSharePath
 }
 
-$Script:ControPath = "$MDTDeploymentSharePath\Control"
+$Script:ControlPath = "$MDTDeploymentSharePath\Control"
 
-if (Test-Path "$ControPath\OperatingSystemGroups.xml")
+if (Test-Path "$Script:ControlPath\OperatingSystemGroups.xml")
 {
-    [XML]$Script:OperatingSystemsGroups = Get-Content -Path "$ControPath\OperatingSystemGroups.xml"
+    [XML]$Script:OperatingSystemsGroups = Get-Content -Path "$Script:ControlPath\OperatingSystemGroups.xml"
 }
 
-if (Test-Path "$ControPath\OperatingSystems.xml")
+if (Test-Path "$Script:ControlPath\OperatingSystems.xml")
 {
-    [XML]$Script:OperatingSystems = Get-Content -Path "$ControPath\OperatingSystems.xml"
+    [XML]$Script:OperatingSystems = Get-Content -Path "$Script:ControlPath\OperatingSystems.xml"
 }
 
-if (Test-Path "$ControPath\TaskSequences.xml")
+if (Test-Path "$Script:ControlPath\TaskSequences.xml")
 {
-    [XML]$Script:TaskSequence = Get-Content -Path "$ControPath\TaskSequences.xml"
+    [XML]$Script:TaskSequence = Get-Content -Path "$Script:ControlPath\TaskSequences.xml"
 }
 
 $menu=@"
@@ -495,7 +497,7 @@ Do {
     Switch (Invoke-Menu -menu $menu -title "MDT Configuration Menu" -clear) {
      "1" {
             Write-Host "Select OS Version" -ForegroundColor Green
-            if (Test-Path "$ControPath\OperatingSystems.xml")
+            if (Test-Path "$Script:ControlPath\OperatingSystems.xml")
             {
                 Write-Host "You do not have Any OS in this Deployment Share Please Import One First" -ForegroundColor Red
             }
@@ -538,12 +540,12 @@ Do {
          }
      "8" {
             Write-Host "Edit CustomSettings.ini File" -ForegroundColor Green
-            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$ControPath\CustomSettings.ini"
+            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$Script:ControlPath\CustomSettings.ini"
             sleep -seconds 2
          }
      "9" {
             Write-Host "Edit Bootstrap.ini File" -ForegroundColor Green
-            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$ControPath\Bootstrap.ini"
+            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$Script:ControlPath\Bootstrap.ini"
             sleep -seconds 2
          }
          
