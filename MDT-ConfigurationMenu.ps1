@@ -1,13 +1,19 @@
 ﻿#Region Functions
+$Global:ControlPath = ""
+$Global:TaskSequence = ""
+$Global:OperatingSystems = ""
+$Global:OperatingSystemsGroups = ""
+$Global:MDTLocalPath = ""
+$Global:CatalogFilePath
 
 Function Select-OS {
-    $OSChoices = $Script:OperatingSystems.oss.os | select name,Guid
+    $OSChoices = $Global:OperatingSystems.oss.os | select name,Guid
     $OSArray = @()
 
     foreach($Os in $OSChoices)
     {
         $GUID = $Os.Guid
-        if($Script:OperatingSystemsGroups.groups.group | Where-Object {$_.Name -eq 'Hidden' -and $_.Member -ccontains $GUID})
+        if($Global:OperatingSystemsGroups.groups.group | Where-Object {$_.Name -eq 'Hidden' -and $_.Member -ccontains $GUID})
         {
        
         }
@@ -20,10 +26,10 @@ Function Select-OS {
 
     $OSChoice = $OSArray | Out-GridView -Title "Select OS" -OutputMode Single
     $OSGUID = $OSChoice.GUID
-    $TSChoice = $Script:TaskSequence.tss.ts | select name,ID
+    $TSChoice = $Global:TaskSequence.tss.ts | select name,ID
     $SelectedTS = $TSChoice | Out-GridView -Title "Select OS" -OutputMode Single
     $IDPath = $SelectedTS.ID
-    $TSPath = "$Script:ControlPath\$IDPath\ts.xml"
+    $TSPath = "$Global:ControlPath\$IDPath\ts.xml"
     $TSXML = [xml](Get-Content $TSPath)
     $TSXML.sequence.globalVarList.variable | Where {$_.name -eq "OSGUID"} | ForEach-Object {$_."#text" = $OSGUID}
     $TSXML.sequence.group | Where {$_.Name -eq "Install"} | ForEach-Object {$_.step} | Where {
@@ -34,11 +40,12 @@ Function Select-OS {
 }
 
 function Set-ChocoAppDependency ($ApplicationName) {
-    
-    $ChocoApp = $Script:Applications.applications.application | Where-Object {$_.name -eq "Chocolatey"}
 
-
-    if($ChocoApp -eq $null -or $ChocoApp -eq "")
+    Start-Sleep 5
+    $AppPath = "$Global:ControlPath\Applications.xml"
+    $AppXML = [xml](Get-Content $AppPath)
+    $ChocoApp = $AppXML.applications.application | Where-Object {$_.ShortName -eq "Chocolatey"}
+    if([string]::IsNullOrEmpty($ChocoApp) -eq $true)
     {
         $ChocoCommandLine = Get-Content "$PSScriptRoot\Choco\ChocoCommandLine.txt"
 
@@ -47,20 +54,19 @@ function Set-ChocoAppDependency ($ApplicationName) {
 
     else
     {
-    
+        
     }
-
+    
+    $AppPath = "$Global:ControlPath\Applications.xml"
     $ChocoAppGuid = $ChocoApp.guid
+    $AppXML2 = [xml](Get-Content $AppPath -Force)
+    $AppXML2.applications.application
+    $SelectedApp = $AppXML2.applications.application | Where-Object {$_.ShortName -eq $ApplicationName}
+    $Child = $AppXML2.CreateElement("Dependency")
+    $Child.InnerText = $ChocoAppGuid
+    $SelectedApp.AppendChild($Child)
+    $AppXML2.Save($AppPath)
 
-    $AppPath = "$Script:ControlPath\Applications.xml"
-
-    $AppXML = [xml](Get-Content $AppPath)
-
-    $AppXML.applications.application | Where {$_.Name -eq $ApplicatioName} | ForEach-Object {$_.Dependency = $ChocoAppGuid}
-
-    $Script:Applications.Save($AppPath)
-
-    pause
 }
 
 Function Create-ChocoApp {
@@ -185,12 +191,12 @@ function Create-MDTTaskSequence {
     
     $TSName = Read-Host -Prompt 'Enter An Name for Your Task Sequence'
     $TSID = Read-Host -Prompt 'Enter An ID for Your Task Sequence EI:TS01'
-    $OSChoices = $Script:OperatingSystems.oss.os | select name,Guid
+    $OSChoices = $Global:OperatingSystems.oss.os | select name,Guid
     $OSArray = @()
     foreach($Os in $OSChoices)
     {
         $GUID = $Os.Guid
-        if($Script:OperatingSystemsGroups.groups.group | Where-Object {$_.Name -eq 'Hidden' -and $_.Member -ccontains $GUID})
+        if($Global:OperatingSystemsGroups.groups.group | Where-Object {$_.Name -eq 'Hidden' -and $_.Member -ccontains $GUID})
         {
        
         }
@@ -200,34 +206,34 @@ function Create-MDTTaskSequence {
         }
 
     }
-
+    Start-Sleep 5
     $OSChoice = $OSArray | Out-GridView -Title "Select OS" -OutputMode Single
     $OSName = $OSChoice.Name
     Import-mdttasksequence -path "DS001:\Task Sequences" -Name $TSName -Template "ClientNew.xml" -Comments "" -ID $TSID -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\$OSName" -FullName "Windows User" -OrgName "HOME" -HomePage "www.google.com" -Verbose
     
-    if(Test-Path "$Script:MDTLocalPath\Scripts\BuiltInApps"){}
+    if(Test-Path "$Global:MDTLocalPath\Scripts\BuiltInApps"){}
     else
     {
-        Copy-item "$psscriptroot\BuiltInApps" "$Script:MDTLocalPath\Scripts" -Recurse
+        Copy-item "$psscriptroot\BuiltInApps" "$Global:MDTLocalPath\Scripts" -Recurse
     }
 
-    if(Test-Path "$Script:MDTLocalPath\Scripts\Choco"){}
+    if(Test-Path "$Global:MDTLocalPath\Scripts\Choco"){}
     else
     {
-        Copy-item "$psscriptroot\Choco" "$Script:MDTLocalPath\Scripts" -Recurse
+        Copy-item "$psscriptroot\Choco" "$Global:MDTLocalPath\Scripts" -Recurse
     }
 
-    if(Test-Path "$Script:MDTLocalPath\Scripts\Config"){}
+    if(Test-Path "$Global:MDTLocalPath\Scripts\Config"){}
     else
     {
-        Copy-item "$psscriptroot\Config" "$Script:MDTLocalPath\Scripts" -Recurse
+        Copy-item "$psscriptroot\Config" "$Global:MDTLocalPath\Scripts" -Recurse
     }
-    if(Test-Path "$Script:MDTLocalPath\Scripts\DeployWiz_LocalAccount.xml"){}
+    if(Test-Path "$Global:MDTLocalPath\Scripts\DeployWiz_LocalAccount.xml"){}
     else
     {
-        Copy-item "$psscriptroot\Scripts\*.xml" "$Script:MDTLocalPath\Scripts" -Recurse -force
-		Copy-item "$psscriptroot\Scripts\*.vbs" "$Script:MDTLocalPath\Scripts" -Recurse -force
-		Copy-item "$psscriptroot\Scripts\*.enu" "$Script:MDTLocalPath\Scripts" -Recurse -force
+        Copy-item "$psscriptroot\Scripts\*.xml" "$Global:MDTLocalPath\Scripts" -Recurse -force
+		Copy-item "$psscriptroot\Scripts\*.vbs" "$Global:MDTLocalPath\Scripts" -Recurse -force
+		Copy-item "$psscriptroot\Scripts\*.enu" "$Global:MDTLocalPath\Scripts" -Recurse -force
     }
     pause
 }
@@ -266,12 +272,12 @@ Read-Host -Prompt $menuprompt
 } #end function
 
 Function Edit-Unattend {
-    $OSChoices = $Script:OperatingSystems.oss.os | Select name,guid,imagefile,source
+    $OSChoices = $Global:OperatingSystems.oss.os | Select name,guid,imagefile,source
     $OSArray = @()
     foreach($Os in $OSChoices)
     {
         $GUID = $Os.Guid
-        if($Script:OperatingSystemsGroups.groups.group | Where-Object {$_.Name -eq 'Hidden' -and $_.Member -ccontains $GUID})
+        if($Global:OperatingSystemsGroups.groups.group | Where-Object {$_.Name -eq 'Hidden' -and $_.Member -ccontains $GUID})
         {
        
         }
@@ -284,26 +290,26 @@ Function Edit-Unattend {
     $OSChoice = $OSArray | Out-GridView -Title "Select OS" -OutputMode Single
     $OSFile = $OSChoice.ImageFile
     $OsSource = $OSChoice.Source
-    $TSChoice = $Script:TaskSequence.tss.ts | select name,ID
+    $TSChoice = $Global:TaskSequence.tss.ts | select name,ID
     $SelectedTS = $TSChoice | Out-GridView -Title "Select OS" -OutputMode Single
     $IDPath = $SelectedTS.ID
     $OSImageFile = $OSFile.trimstart('.\')
     $OsSourceLocation = $OsSource.trimstart('.\')
-    $OSSourcePath = "$Script:MDTDeploymentSharePath\$OsSourceLocation"
-    $OsImagefilePath = "$Script:MDTDeploymentSharePath\$OSImageFile"
-    $unattendPath = "$Script:MDTDeploymentSharePath\Control\$IDPath\Unattend.xml"
+    $OSSourcePath = "$Global:MDTDeploymentSharePath\$OsSourceLocation"
+    $OsImagefilePath = "$Global:MDTDeploymentSharePath\$OSImageFile"
+    $unattendPath = "$Global:MDTDeploymentSharePath\Control\$IDPath\Unattend.xml"
     if(Test-Path -Path "$OSSourcePath\*.clg")
     {
         $CatalogFile = Get-ChildItem -Path "$OSSourcePath\*.clg"
         $CatalogFileName = $CatalogFile.name
-        $Script:CatalogFilePath =  "$OSSourcePath\$CatalogFileName"
+        $Global:CatalogFilePath =  "$OSSourcePath\$CatalogFileName"
     }
     else
     {
         Get-MDTOperatingSystemCatalog -ImageFile $OsImagefilePath -Index "1" -Verbose
     }
     
-    Start-process -FilePath "${env:ProgramFiles(x86)}\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\WSIM\imgmgr.exe" -ArgumentList "$([char]34)$unattendPath$([char]34) -d $([char]34)$Script:MDTDeploymentSharePath$([char]34) -i $([char]34)$Script:CatalogFilePath$([char]34)" -Verb RUnAs
+    Start-process -FilePath "${env:ProgramFiles(x86)}\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\WSIM\imgmgr.exe" -ArgumentList "$([char]34)$unattendPath$([char]34) -d $([char]34)$Global:MDTDeploymentSharePath$([char]34) -i $([char]34)$Global:CatalogFilePath$([char]34)" -Verb RUnAs
     pause
 }
 #EndRegion Functions
@@ -410,9 +416,9 @@ Else
 ################################                                                                              ################################
 ##############################################################################################################################################
 
-$Script:MDTDeploymentSharePath = Read-Host -Prompt 'Input your MDT Deployment Share UNC Path If Not Create Yet Just leave Empty'
+$Global:MDTDeploymentSharePath = Read-Host -Prompt 'Input your MDT Deployment Share UNC Path If Not Create Yet Just leave Empty'
 
-if($Script:MDTDeploymentSharePath -eq "" -or $Script:MDTDeploymentSharePath -eq $null)
+if([string]::IsNullOrEmpty($Global:MDTDeploymentSharePath) -eq $true)
 {
     
 $msgBoxInput =  [System.Windows.MessageBox]::Show("Do you want the Deployment Share to be Created Automatically ?",'ADK Not Installed','YesNoCancel','Information')
@@ -421,16 +427,16 @@ $msgBoxInput =  [System.Windows.MessageBox]::Show("Do you want the Deployment Sh
 
   'Yes' {
 
-    $Script:MDTLocalPath = "C:\DeploymentShare" 
-    New-Item -Path $Script:MDTLocalPath -ItemType directory
-    New-SmbShare -Name "DeploymentShare$" -Path $Script:MDTLocalPath -FullAccess Administrators
+    $Global:MDTLocalPath = "C:\DeploymentShare" 
+    New-Item -Path $Global:MDTLocalPath -ItemType directory
+    New-SmbShare -Name "DeploymentShare$" -Path $Global:MDTLocalPath -FullAccess Administrators
     Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
-    New-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root $Script:MDTLocalPath -Description "MDT Deployment Share" -NetworkPath "\\$env:COMPUTERNAME\DeploymentShare$" -Verbose | add-MDTPersistentDrive -Verbose
-    Copy-item "$psscriptroot\BuiltInApps" "$Script:MDTLocalPath\Scripts" -Recurse
-    Copy-item "$psscriptroot\Choco" "$Script:MDTLocalPath\Scripts" -Recurse
-    Copy-item "$psscriptroot\Config" "$Script:MDTLocalPath\Scripts" -Recurse
-    Copy-item "$psscriptroot\Scripts\*.xml" "$Script:MDTLocalPath\Scripts" -Recurse -force
-    $Script:MDTDeploymentSharePath = "\\$env:COMPUTERNAME\DeploymentShare$"
+    New-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root $Global:MDTLocalPath -Description "MDT Deployment Share" -NetworkPath "\\$env:COMPUTERNAME\DeploymentShare$" -Verbose | add-MDTPersistentDrive -Verbose
+    Copy-item "$psscriptroot\BuiltInApps" "$Global:MDTLocalPath\Scripts" -Recurse
+    Copy-item "$psscriptroot\Choco" "$Global:MDTLocalPath\Scripts" -Recurse
+    Copy-item "$psscriptroot\Config" "$Global:MDTLocalPath\Scripts" -Recurse
+    Copy-item "$psscriptroot\Scripts\*.xml" "$Global:MDTLocalPath\Scripts" -Recurse -force
+    $Global:MDTDeploymentSharePath = "\\$env:COMPUTERNAME\DeploymentShare$"
   }
 
   'No' {
@@ -454,24 +460,24 @@ if (Get-PSDrive -name "DS001" -ErrorAction SilentlyContinue)
 else
 {
     Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
-    New-PSDrive -Name "DS001" -PSProvider MDTProvider -Root $Script:MDTDeploymentSharePath
+    New-PSDrive -Name "DS001" -PSProvider MDTProvider -Root $Global:MDTDeploymentSharePath
 }
 
-$Script:ControlPath = "$MDTDeploymentSharePath\Control"
+$Global:ControlPath = "$Global:MDTDeploymentSharePath\Control"
 
-if (Test-Path "$Script:ControlPath\OperatingSystemGroups.xml")
+if (Test-Path "$Global:ControlPath\OperatingSystemGroups.xml")
 {
-    [XML]$Script:OperatingSystemsGroups = Get-Content -Path "$Script:ControlPath\OperatingSystemGroups.xml"
+    [XML]$Global:OperatingSystemsGroups = Get-Content -Path "$Global:ControlPath\OperatingSystemGroups.xml"
 }
 
-if (Test-Path "$Script:ControlPath\OperatingSystems.xml")
+if (Test-Path "$Global:ControlPath\OperatingSystems.xml")
 {
-    [XML]$Script:OperatingSystems = Get-Content -Path "$Script:ControlPath\OperatingSystems.xml"
+    [XML]$Global:OperatingSystems = Get-Content -Path "$Global:ControlPath\OperatingSystems.xml"
 }
 
-if (Test-Path "$Script:ControlPath\TaskSequences.xml")
+if (Test-Path "$Global:ControlPath\TaskSequences.xml")
 {
-    [XML]$Script:TaskSequence = Get-Content -Path "$Script:ControlPath\TaskSequences.xml"
+    [XML]$Global:TaskSequence = Get-Content -Path "$Global:ControlPath\TaskSequences.xml"
 }
 
 $menu=@"
@@ -497,7 +503,7 @@ Do {
     Switch (Invoke-Menu -menu $menu -title "MDT Configuration Menu" -clear) {
      "1" {
             Write-Host "Select OS Version" -ForegroundColor Green
-            if (Test-Path "$Script:ControlPath\OperatingSystems.xml")
+            if (Test-Path "$Global:ControlPath\OperatingSystems.xml")
             {
                 Write-Host "You do not have Any OS in this Deployment Share Please Import One First" -ForegroundColor Red
             }
@@ -530,7 +536,7 @@ Do {
      "6" {
             Write-Host "Create MDT Offline Media" -ForegroundColor Green
             $MDTMediaPath = Read-Host -Prompt 'Input your MDT Media Path'
-            Create-MDTMedia -DeploymentShare $Script:MDTDeploymentSharePath -MediaPath $MDTMediaPath
+            Create-MDTMedia -DeploymentShare $Global:MDTDeploymentSharePath -MediaPath $MDTMediaPath
             sleep -seconds 2
          }
      "7" {
@@ -540,12 +546,12 @@ Do {
          }
      "8" {
             Write-Host "Edit CustomSettings.ini File" -ForegroundColor Green
-            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$Script:ControlPath\CustomSettings.ini"
+            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$Global:ControlPath\CustomSettings.ini"
             sleep -seconds 2
          }
      "9" {
             Write-Host "Edit Bootstrap.ini File" -ForegroundColor Green
-            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$Script:ControlPath\Bootstrap.ini"
+            Start-Process -FilePath "$env:windir\system32\notepad.exe" -ArgumentList "$Global:ControlPath\Bootstrap.ini"
             sleep -seconds 2
          }
          
